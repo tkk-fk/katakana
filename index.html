@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>カタカナフラッシュカード</title>
+
+<!-- 読みやすいUDフォント（字形の安定・視認性） -->
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    /* ひらがな版と差別化：クールなインディゴ×グリーン */
+    --bg:#eef2ff;           /* indigo-50 */
+    --ink:#232b3a;          /* 読みやすい濃色 */
+    --card:#ffffff;
+    --accent:#6366f1;       /* 見出し・スタート（indigo-500） */
+    --accent2:#22c55e;      /* 選択ボタンON（emerald-500） */
+    --ring:#e0e7ff;         /* indigo-100 */
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,.08);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  html,body{ height:100% }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:
+      "UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R",
+      "BIZ UDPGothic","Noto Sans JP", system-ui, -apple-system, sans-serif;
+  }
+
+  .wrap{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+  header{ text-align:center; padding:clamp(16px,2.5vw,28px) }
+  h1{ margin:0; font-size:clamp(28px,4vw,48px); color:var(--accent) }
+
+  .panel{ max-width:980px; margin:0 auto; padding:clamp(12px,2.4vw,28px) }
+  .group{ margin:clamp(8px,1.6vw,18px) 0 }
+  .group h2{ margin:.2em 0 .6em; font-size:clamp(16px,2.2vw,22px); color:#4b5563 }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px }
+  .ctrl-btn{
+    border:2px solid var(--ring); border-radius:14px; background:#fff;
+    padding:.7em 1em; font-weight:800; font-size:clamp(15px,2.2vw,18px);
+    cursor:pointer; transition:.15s; text-align:center;
+  }
+  .ctrl-btn:hover{ background:#f8fafc; transform:translateY(-1px) }
+
+  .grid{ display:grid; gap:10px; grid-template-columns:repeat(3,1fr) }
+  @media (min-width:640px){ .grid{ grid-template-columns:repeat(6,1fr) } }
+
+  .btn{
+    border:2px solid var(--ring); border-radius:14px; background:#fff;
+    padding:.8em 1em; font-weight:800; font-size:clamp(16px,2.4vw,20px);
+    cursor:pointer; transition:.15s; text-align:center;
+  }
+  .btn:hover{ background:#f8fafc; transform:translateY(-1px) }
+  .btn.sel{ background:var(--accent2); color:#fff; border-color:var(--accent2); transform:scale(1.02) }
+
+  .choices{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px }
+  .choice{ flex:1 1 130px }
+
+  .start{ display:block; width:min(400px,92vw); margin:18px auto 0;
+          background:var(--accent); color:#fff; border:none; border-radius:999px;
+          padding:14px 24px; font-size:clamp(20px,3vw,28px); font-weight:900; cursor:pointer; box-shadow:var(--shadow) }
+  .start:disabled{ opacity:.4; cursor:not-allowed }
+
+  /* === プレイ画面 === */
+  .stage{ display:none; height:100dvh; width:100%; background:var(--card);
+          place-items:center; position:relative }
+  .stage.play{ display:grid }
+  .glyph{
+    font-size:clamp(80px,20vw,240px); line-height:1; font-weight:900; user-select:none;
+    transform:translateY(-4vh);
+  }
+  .hint{
+    position:absolute; bottom:18px; width:100%; text-align:center;
+    font-size:clamp(12px,2.4vw,14px); color:#6b7280; opacity:.75;
+  }
+
+  /* === 完了 === */
+  .done{ text-align:center }
+  .done h3{ font-size:clamp(22px,4vw,36px); margin:.2em 0 .4em; color:var(--accent) }
+  .row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
+  .ghost{ background:#eef2ff; color:#232b3a; border:none; border-radius:999px; padding:12px 20px; font-weight:800 }
+  .primary{ background:var(--accent); color:#fff; border:none; border-radius:999px; padding:12px 20px; font-weight:900 }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>カタカナフラッシュカード</h1>
+  </header>
+
+  <section class="panel" id="config">
+    <div class="group">
+      <h2>行をえらぶ（複数OK）</h2>
+
+      <!-- ぜんぶ選択ボタン -->
+      <div class="controls">
+        <button class="ctrl-btn" id="selectAll">ぜんぶ</button>
+      </div>
+
+      <div class="grid" id="rowGrid">
+        <!-- 基本50音 -->
+        <button class="btn" data-key="a">ア行</button>
+        <button class="btn" data-key="ka">カ行</button>
+        <button class="btn" data-key="sa">サ行</button>
+        <button class="btn" data-key="ta">タ行</button>
+        <button class="btn" data-key="na">ナ行</button>
+        <button class="btn" data-key="ha">ハ行</button>
+        <button class="btn" data-key="ma">マ行</button>
+        <button class="btn" data-key="ya">ヤ行</button>
+        <button class="btn" data-key="ra">ラ行</button>
+        <button class="btn" data-key="wa">ワヲン</button>
+        <!-- 濁音・半濁音 -->
+        <button class="btn" data-key="ga">ガ行</button>
+        <button class="btn" data-key="za">ザ行</button>
+        <button class="btn" data-key="da">ダ行</button>
+        <button class="btn" data-key="ba">バ行</button>
+        <button class="btn" data-key="pa">パ行</button>
+        <!-- 拗音 -->
+        <button class="btn" data-key="kya">キャ行</button>
+        <button class="btn" data-key="sha">シャ行</button>
+        <button class="btn" data-key="cha">チャ行</button>
+        <button class="btn" data-key="nya">ニャ行</button>
+        <button class="btn" data-key="hya">ヒャ行</button>
+        <button class="btn" data-key="mya">ミャ行</button>
+        <button class="btn" data-key="rya">リャ行</button>
+        <button class="btn" data-key="gya">ギャ行</button>
+        <button class="btn" data-key="ja">ジャ行</button>
+        <button class="btn" data-key="bya">ビャ行</button>
+        <button class="btn" data-key="pya">ピャ行</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>出題順</h2>
+      <div class="choices" id="orderRow">
+        <button class="btn choice sel" data-order="seq">じゅんばん</button>
+        <button class="btn choice" data-order="rand">ランダム</button>
+      </div>
+    </div>
+
+    <!-- 読み上げ -->
+    <div class="group">
+      <h2>よみあげ</h2>
+      <div class="choices" id="readRow">
+        <button class="btn choice sel" data-read="off">なし</button>
+        <button class="btn choice" data-read="on">あり</button>
+      </div>
+      <small style="opacity:.65">「あり」のとき：1回タップで読み上げ、2回目タップで次へ。</small>
+    </div>
+
+    <button class="start" id="startBtn" disabled>スタート</button>
+  </section>
+
+  <section class="stage" id="stage" aria-live="polite">
+    <div class="glyph" id="glyph"></div>
+    <div class="hint">タップでつぎへ</div>
+  </section>
+
+  <footer class="panel" style="text-align:center;opacity:.6">
+    <small>© 特別支援教材開発研究所</small>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const rowGrid = $('rowGrid');
+  const orderRow = $('orderRow');
+  const readRow  = $('readRow');
+  const startBtn = $('startBtn');
+  const selectAllBtn = $('selectAll');
+  const config = $('config');
+  const stage  = $('stage');
+  let glyph  = $('glyph'); // 再描画時に差し替える
+
+  // ===== データ（行ごとの配列）=====  カタカナ版
+  const ROWS = {
+    // 基本
+    a:  ['ア','イ','ウ','エ','オ'],
+    ka: ['カ','キ','ク','ケ','コ'],
+    sa: ['サ','シ','ス','セ','ソ'],
+    ta: ['タ','チ','ツ','テ','ト'],
+    na: ['ナ','ニ','ヌ','ネ','ノ'],
+    ha: ['ハ','ヒ','フ','ヘ','ホ'],
+    ma: ['マ','ミ','ム','メ','モ'],
+    ya: ['ヤ','ユ','ヨ'],
+    ra: ['ラ','リ','ル','レ','ロ'],
+    wa: ['ワ','ヲ','ン'],
+
+    // 濁音・半濁音
+    ga: ['ガ','ギ','グ','ゲ','ゴ'],
+    za: ['ザ','ジ','ズ','ゼ','ゾ'],
+    da: ['ダ','ヂ','ヅ','デ','ド'],
+    ba: ['バ','ビ','ブ','ベ','ボ'],
+    pa: ['パ','ピ','プ','ペ','ポ'],
+
+    // 拗音（小書き：ャュョ）
+    kya:['キャ','キュ','キョ'],
+    sha:['シャ','シュ','ショ'],
+    cha:['チャ','チュ','チョ'],
+    nya:['ニャ','ニュ','ニョ'],
+    hya:['ヒャ','ヒュ','ヒョ'],
+    mya:['ミャ','ミュ','ミョ'],
+    rya:['リャ','リュ','リョ'],
+    gya:['ギャ','ギュ','ギョ'],
+    ja: ['ジャ','ジュ','ジョ'],
+    bya:['ビャ','ビュ','ビョ'],
+    pya:['ピャ','ピュ','ピョ'],
+  };
+
+  // ===== 状態 =====
+  let selectedSet = new Set();     // 行（複数）
+  let selectedOrder = [];          // クリック順（順番出題に使う）
+  let order = 'seq';               // 'seq' | 'rand'
+  let readMode = 'off';            // 'off' | 'on'
+  let deck = [];                   // 出題配列
+  let index = 0;                   // 現在位置
+  let running = false;
+  let spokenThisCard = false;      // 読み上げ済みフラグ（readMode=onのとき使用）
+
+  // ===== ユーティリティ =====
+  const shuffle = (arr) => {
+    for (let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  };
+  const updateStartEnabled = () => {
+    startBtn.disabled = selectedSet.size === 0;
+  };
+  const speak = (text) => {
+    try{
+      if(!text) return;
+      window.speechSynthesis.cancel(); // 連打対策
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      u.rate = 1.0;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  };
+
+  // ===== 行：複数トグル =====
+  rowGrid.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.btn');
+    if(!btn) return;
+    const key = btn.dataset.key;
+    if (selectedSet.has(key)){
+      selectedSet.delete(key);
+      btn.classList.remove('sel');
+      selectedOrder = selectedOrder.filter(k=>k!==key);
+    } else {
+      selectedSet.add(key);
+      btn.classList.add('sel');
+      selectedOrder.push(key);
+    }
+    updateStartEnabled();
+  });
+
+  // ===== ぜんぶ =====
+  selectAllBtn.addEventListener('click', ()=>{
+    selectedSet = new Set(Object.keys(ROWS));
+    selectedOrder = Object.keys(ROWS); // 表示定義順
+    rowGrid.querySelectorAll('.btn').forEach(b=>b.classList.add('sel'));
+    updateStartEnabled();
+  });
+
+  // ===== 出題順選択 =====
+  orderRow.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.btn'); if(!btn) return;
+    [...orderRow.querySelectorAll('.btn')].forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    order = btn.dataset.order;
+  });
+
+  // ===== 読み上げ選択 =====
+  readRow.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.btn'); if(!btn) return;
+    [...readRow.querySelectorAll('.btn')].forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    readMode = btn.dataset.read; // 'on' or 'off'
+  });
+
+  // ===== スタート =====
+  startBtn.addEventListener('click', ()=>{
+    if(selectedSet.size===0) return;
+
+    const keys = order==='seq' ? selectedOrder.slice() : Array.from(selectedSet);
+    let pool = [];
+    keys.forEach(k => { pool = pool.concat(ROWS[k] || []); });
+    deck = order==='rand' ? shuffle(pool) : pool;
+
+    index = 0;
+    running = true;
+    spokenThisCard = false;
+    config.style.display = 'none';
+    stage.classList.add('play');
+    glyph.textContent = deck[index] || '';
+  });
+
+  // ===== タップで次へ（読み上げありなら 1回目：読む／2回目：次へ） =====
+  const advanceOrSpeak = ()=>{
+    if(!running) return;
+    if(readMode === 'on'){
+      if(!spokenThisCard){
+        spokenThisCard = true;
+        speak(deck[index]);
+        return; // このタップでは進めない
+      }
+      // 2回目タップで進む
+      spokenThisCard = false; // 次のカードに備えて初期化
+      goNext();
+    }else{
+      // 読み上げなし：即次へ
+      goNext();
+    }
+  };
+
+  const goNext = ()=>{
+    index++;
+    if(index < deck.length){
+      glyph.textContent = deck[index];
+      window.speechSynthesis?.cancel();
+      spokenThisCard = false;
+    }else{
+      finish();
+    }
+  };
+
+  stage.addEventListener('pointerdown', advanceOrSpeak);
+
+  // ===== 完了 =====
+  function finish(){
+    running = false;
+    window.speechSynthesis?.cancel();
+    stage.innerHTML = `
+      <div class="done">
+        <div style="font-size:clamp(52px,10vw,120px)">🎉</div>
+        <h3>おしまい！</h3>
+        <p style="margin:.5em 0 1em">ぜんぶで <b>${deck.length}</b> まい のカードをれんしゅうしました。</p>
+        <div class="row">
+          <button class="ghost" id="again">もういっかい</button>
+          <button class="primary" id="back">もどる</button>
+        </div>
+      </div>`;
+    document.getElementById('again').onclick = ()=>{
+      // ステージDOMを元に戻して再スタート（設定は維持）
+      stage.innerHTML = `
+        <div class="glyph" id="glyph"></div>
+        <div class="hint">タップでつぎへ</div>`;
+      glyph = document.getElementById('glyph');
+      index = 0;
+      if(order === 'rand') shuffle(deck);
+      glyph.textContent = deck[index] || '';
+      spokenThisCard = false;
+      // pointerdown は stage に付いたままなのでそのまま動く
+    };
+    document.getElementById('back').onclick = ()=> location.reload();
+  }
+})();
+</script>
+</body>
+</html>
