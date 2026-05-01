@@ -78,6 +78,23 @@
     font-size:clamp(12px,2.4vw,14px); color:#6b7280; opacity:.75;
   }
 
+  /* === カード画面の「もどる」ボタン === */
+  .back-btn{
+    position:absolute; top:14px; left:14px;
+    background:#fff; color:var(--ink);
+    border:2px solid var(--ring); border-radius:999px;
+    padding:8px 16px; font-weight:800;
+    font-size:clamp(13px,2.2vw,15px);
+    cursor:pointer; z-index:10;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    transition:.15s;
+    /* iOS Safariのセーフエリアに対応 */
+    top:max(14px, env(safe-area-inset-top));
+    left:max(14px, env(safe-area-inset-left));
+  }
+  .back-btn:hover{ background:#f8fafc; transform:translateY(-1px) }
+  .back-btn:active{ transform:translateY(0); background:#eef2ff }
+
   /* === 完了 === */
   .done{ text-align:center }
   .done h3{ font-size:clamp(22px,4vw,36px); margin:.2em 0 .4em; color:var(--accent) }
@@ -157,6 +174,7 @@
   </section>
 
   <section class="stage" id="stage" aria-live="polite">
+    <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
     <div class="glyph" id="glyph"></div>
     <div class="hint">タップでつぎへ</div>
   </section>
@@ -303,6 +321,24 @@
     glyph.textContent = deck[index] || '';
   });
 
+  // ===== カード画面の「もどる」 → 設定画面に戻る =====
+  function goBackToConfig(){
+    running = false;
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    spokenThisCard = false;
+    index = 0;
+    stage.classList.remove('play');
+    config.style.display = '';
+    // 完了画面が出ていた場合に備えて、ステージのDOMを初期形に戻す
+    if(!document.getElementById('glyph')){
+      stage.innerHTML = `
+        <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
+        <div class="glyph" id="glyph"></div>
+        <div class="hint">タップでつぎへ</div>`;
+      glyph = document.getElementById('glyph');
+    }
+  }
+
   // ===== タップで次へ（読み上げありなら 1回目：読む／2回目：次へ） =====
   const advanceOrSpeak = ()=>{
     if(!running) return;
@@ -332,7 +368,16 @@
     }
   };
 
-  stage.addEventListener('pointerdown', advanceOrSpeak);
+  // ステージのタップ処理（イベント委譲で「もどる」と進行を分岐）
+  stage.addEventListener('pointerdown', (e)=>{
+    // 「もどる」ボタン上のタップは戻る処理だけ実行（次に進ませない）
+    if(e.target.closest('#backBtn')){
+      e.stopPropagation();
+      goBackToConfig();
+      return;
+    }
+    advanceOrSpeak();
+  });
 
   // ===== 完了 =====
   function finish(){
@@ -351,10 +396,12 @@
     document.getElementById('again').onclick = ()=>{
       // ステージDOMを元に戻して再スタート（設定は維持）
       stage.innerHTML = `
+        <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
         <div class="glyph" id="glyph"></div>
         <div class="hint">タップでつぎへ</div>`;
       glyph = document.getElementById('glyph');
       index = 0;
+      running = true;
       if(order === 'rand') shuffle(deck);
       glyph.textContent = deck[index] || '';
       spokenThisCard = false;
