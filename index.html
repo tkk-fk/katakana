@@ -4,109 +4,286 @@
 <meta charset="utf-8" />
 <meta name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+
 <title>カタカナフラッシュカード</title>
 
-<!-- 読みやすいUDフォント（字形の安定・視認性） -->
+<!-- 読みやすいUDフォント -->
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    /* ひらがな版と差別化：クールなインディゴ×グリーン */
-    --bg:#eef2ff;           /* indigo-50 */
-    --ink:#232b3a;          /* 読みやすい濃色 */
+    --bg:#eef2ff;
+    --ink:#232b3a;
     --card:#ffffff;
-    --accent:#6366f1;       /* 見出し・スタート（indigo-500） */
-    --accent2:#22c55e;      /* 選択ボタンON（emerald-500） */
-    --ring:#e0e7ff;         /* indigo-100 */
+    --accent:#6366f1;
+    --accent2:#22c55e;
+    --ring:#e0e7ff;
     --radius:16px;
     --shadow:0 10px 30px rgba(0,0,0,.08);
   }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
-  html,body{ height:100% }
+
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  html,body{
+    height:100%;
+  }
+
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    overscroll-behavior:none;
-    touch-action:manipulation;              /* ダブルタップズーム防止 */
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
     font-family:
-      "UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R",
-      "BIZ UDPGothic","Noto Sans JP", system-ui, -apple-system, sans-serif;
+      "UD デジタル 教科書体 N-R",
+      "UD Digi Kyokasho N-R",
+      "BIZ UDPGothic",
+      "Noto Sans JP",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
-  .wrap{ min-height:100vh; min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
-  header{ text-align:center; padding:clamp(16px,2.5vw,28px) }
-  h1{ margin:0; font-size:clamp(28px,4vw,48px); color:var(--accent) }
+  button{
+    font-family:inherit;
+    touch-action:manipulation;
+  }
 
-  .panel{ max-width:980px; margin:0 auto; padding:clamp(12px,2.4vw,28px) }
-  .group{ margin:clamp(8px,1.6vw,18px) 0 }
-  .group h2{ margin:.2em 0 .6em; font-size:clamp(16px,2.2vw,22px); color:#4b5563 }
+  .wrap{
+    min-height:100dvh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+  }
 
-  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px }
+  header{
+    text-align:center;
+    padding:clamp(16px,2.5vw,28px);
+  }
+
+  h1{
+    margin:0;
+    font-size:clamp(28px,4vw,48px);
+    color:var(--accent);
+  }
+
+  .panel{
+    max-width:980px;
+    margin:0 auto;
+    padding:clamp(12px,2.4vw,28px);
+  }
+
+  .group{
+    margin:clamp(8px,1.6vw,18px) 0;
+  }
+
+  .group h2{
+    margin:.2em 0 .6em;
+    font-size:clamp(16px,2.2vw,22px);
+    color:#4b5563;
+  }
+
+  .controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
   .ctrl-btn{
-    border:2px solid var(--ring); border-radius:14px; background:#fff;
-    padding:.7em 1em; min-height:44px; font-weight:800; font-size:clamp(15px,2.2vw,18px);
-    cursor:pointer; transition:.15s; text-align:center;
+    border:2px solid var(--ring);
+    border-radius:14px;
+    background:#fff;
+    padding:.7em 1em;
+    font-weight:800;
+    font-size:clamp(15px,2.2vw,18px);
+    cursor:pointer;
+    transition:.15s;
+    text-align:center;
   }
-  .ctrl-btn:hover{ background:#f8fafc; transform:translateY(-1px) }
 
-  .grid{ display:grid; gap:10px; grid-template-columns:repeat(3,1fr) }
-  @media (min-width:640px){ .grid{ grid-template-columns:repeat(6,1fr) } }
+  .ctrl-btn:hover{
+    background:#f8fafc;
+    transform:translateY(-1px);
+  }
+
+  .grid{
+    display:grid;
+    gap:10px;
+    grid-template-columns:repeat(3,1fr);
+  }
+
+  @media (min-width:640px){
+    .grid{
+      grid-template-columns:repeat(6,1fr);
+    }
+  }
 
   .btn{
-    border:2px solid var(--ring); border-radius:14px; background:#fff;
-    padding:.8em 1em; min-height:44px; font-weight:800; font-size:clamp(16px,2.4vw,20px);
-    cursor:pointer; transition:.15s; text-align:center;
+    border:2px solid var(--ring);
+    border-radius:14px;
+    background:#fff;
+    padding:.8em 1em;
+    font-weight:800;
+    font-size:clamp(16px,2.4vw,20px);
+    cursor:pointer;
+    transition:.15s;
+    text-align:center;
   }
-  .btn:hover{ background:#f8fafc; transform:translateY(-1px) }
-  .btn.sel{ background:var(--accent2); color:#fff; border-color:var(--accent2); transform:scale(1.02) }
-  .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none }
 
-  .choices{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px }
-  .choice{ flex:1 1 130px }
+  .btn:hover{
+    background:#f8fafc;
+    transform:translateY(-1px);
+  }
 
-  .start{ display:block; width:min(400px,92vw); margin:18px auto 0;
-          background:var(--accent); color:#fff; border:none; border-radius:999px;
-          padding:14px 24px; font-size:clamp(20px,3vw,28px); font-weight:900; cursor:pointer; box-shadow:var(--shadow) }
-  .start:disabled{ opacity:.4; cursor:not-allowed }
+  .btn.sel{
+    background:var(--accent2);
+    color:#fff;
+    border-color:var(--accent2);
+    transform:scale(1.02);
+  }
 
-  /* === プレイ画面 === */
-  .stage{ display:none; height:100vh; height:100dvh; width:100%; background:var(--card);
-          place-items:center; position:relative }
-  .stage.play{ display:grid }
+  .choices{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:8px;
+  }
+
+  .choice{
+    flex:1 1 130px;
+  }
+
+  .start{
+    display:block;
+    width:min(400px,92vw);
+    margin:18px auto 0;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:14px 24px;
+    font-size:clamp(20px,3vw,28px);
+    font-weight:900;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+
+  .start:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+
+  /* ===== プレイ画面 ===== */
+
+  .stage{
+    display:none;
+    height:100dvh;
+    width:100%;
+    background:var(--card);
+    place-items:center;
+    position:relative;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .stage.play{
+    display:grid;
+  }
+
   .glyph{
-    font-size:clamp(80px,20vw,240px); line-height:1; font-weight:900; user-select:none;
+    font-size:clamp(80px,20vw,240px);
+    line-height:1;
+    font-weight:900;
+    user-select:none;
     transform:translateY(-4vh);
   }
+
   .hint{
-    position:absolute; bottom:18px; width:100%; text-align:center;
-    font-size:clamp(12px,2.4vw,14px); color:#6b7280; opacity:.75;
+    position:absolute;
+    bottom:max(18px, env(safe-area-inset-bottom));
+    left:10px;
+    right:10px;
+    text-align:center;
+    font-size:clamp(12px,2.4vw,15px);
+    color:#6b7280;
+    opacity:.8;
+    pointer-events:none;
   }
 
-  /* === カード画面の「もどる」ボタン === */
+  /* ===== もどるボタン ===== */
+
   .back-btn{
-    position:absolute; top:14px; left:14px;
-    background:#fff; color:var(--ink);
-    border:2px solid var(--ring); border-radius:999px;
-    padding:8px 16px; min-height:44px; font-weight:800;
-    font-size:clamp(13px,2.2vw,15px);
-    cursor:pointer; z-index:10;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
-    transition:.15s;
-    /* iOS Safariのセーフエリアに対応 */
+    position:absolute;
     top:max(14px, env(safe-area-inset-top));
     left:max(14px, env(safe-area-inset-left));
+    background:#fff;
+    color:var(--ink);
+    border:2px solid var(--ring);
+    border-radius:999px;
+    padding:8px 16px;
+    font-weight:800;
+    font-size:clamp(13px,2.2vw,15px);
+    cursor:pointer;
+    z-index:10;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    transition:.15s;
   }
-  .back-btn:hover{ background:#f8fafc; transform:translateY(-1px) }
-  .back-btn:active{ transform:translateY(0); background:#eef2ff }
 
-  /* === 完了 === */
-  .done{ text-align:center }
-  .done h3{ font-size:clamp(22px,4vw,36px); margin:.2em 0 .4em; color:var(--accent) }
-  .row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-  .ghost{ background:#eef2ff; color:#232b3a; border:none; border-radius:999px; padding:12px 20px; min-height:44px; font-weight:800; cursor:pointer }
-  .primary{ background:var(--accent); color:#fff; border:none; border-radius:999px; padding:12px 20px; min-height:44px; font-weight:900; cursor:pointer }
+  .back-btn:hover{
+    background:#f8fafc;
+    transform:translateY(-1px);
+  }
+
+  .back-btn:active{
+    transform:translateY(0);
+    background:#eef2ff;
+  }
+
+  /* ===== 完了画面 ===== */
+
+  .done{
+    text-align:center;
+    padding:20px;
+  }
+
+  .done h3{
+    font-size:clamp(22px,4vw,36px);
+    margin:.2em 0 .4em;
+    color:var(--accent);
+  }
+
+  .row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .ghost{
+    background:#eef2ff;
+    color:#232b3a;
+    border:none;
+    border-radius:999px;
+    padding:12px 20px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:12px 20px;
+    font-weight:900;
+    cursor:pointer;
+  }
 </style>
 </head>
+
 <body>
+
 <div class="wrap">
 
   <header>
@@ -114,96 +291,160 @@
   </header>
 
   <section class="panel" id="config">
+
     <div class="group">
+
       <h2>行をえらぶ（複数OK）</h2>
 
-      <!-- ぜんぶ選択ボタン -->
       <div class="controls">
-        <button class="ctrl-btn" id="selectAll">ぜんぶ</button>
+        <button class="ctrl-btn" id="selectAll" type="button">
+          ぜんぶ
+        </button>
       </div>
 
       <div class="grid" id="rowGrid">
+
         <!-- 基本50音 -->
-        <button class="btn" data-key="a">ア行</button>
-        <button class="btn" data-key="ka">カ行</button>
-        <button class="btn" data-key="sa">サ行</button>
-        <button class="btn" data-key="ta">タ行</button>
-        <button class="btn" data-key="na">ナ行</button>
-        <button class="btn" data-key="ha">ハ行</button>
-        <button class="btn" data-key="ma">マ行</button>
-        <button class="btn" data-key="ya">ヤ行</button>
-        <button class="btn" data-key="ra">ラ行</button>
-        <button class="btn" data-key="wa">ワヲン</button>
+
+        <button class="btn" data-key="a" type="button">ア行</button>
+        <button class="btn" data-key="ka" type="button">カ行</button>
+        <button class="btn" data-key="sa" type="button">サ行</button>
+        <button class="btn" data-key="ta" type="button">タ行</button>
+        <button class="btn" data-key="na" type="button">ナ行</button>
+        <button class="btn" data-key="ha" type="button">ハ行</button>
+        <button class="btn" data-key="ma" type="button">マ行</button>
+        <button class="btn" data-key="ya" type="button">ヤ行</button>
+        <button class="btn" data-key="ra" type="button">ラ行</button>
+        <button class="btn" data-key="wa" type="button">ワヲン</button>
+
         <!-- 濁音・半濁音 -->
-        <button class="btn" data-key="ga">ガ行</button>
-        <button class="btn" data-key="za">ザ行</button>
-        <button class="btn" data-key="da">ダ行</button>
-        <button class="btn" data-key="ba">バ行</button>
-        <button class="btn" data-key="pa">パ行</button>
+
+        <button class="btn" data-key="ga" type="button">ガ行</button>
+        <button class="btn" data-key="za" type="button">ザ行</button>
+        <button class="btn" data-key="da" type="button">ダ行</button>
+        <button class="btn" data-key="ba" type="button">バ行</button>
+        <button class="btn" data-key="pa" type="button">パ行</button>
+
         <!-- 拗音 -->
-        <button class="btn" data-key="kya">キャ行</button>
-        <button class="btn" data-key="sha">シャ行</button>
-        <button class="btn" data-key="cha">チャ行</button>
-        <button class="btn" data-key="nya">ニャ行</button>
-        <button class="btn" data-key="hya">ヒャ行</button>
-        <button class="btn" data-key="mya">ミャ行</button>
-        <button class="btn" data-key="rya">リャ行</button>
-        <button class="btn" data-key="gya">ギャ行</button>
-        <button class="btn" data-key="ja">ジャ行</button>
-        <button class="btn" data-key="bya">ビャ行</button>
-        <button class="btn" data-key="pya">ピャ行</button>
+
+        <button class="btn" data-key="kya" type="button">キャ行</button>
+        <button class="btn" data-key="sha" type="button">シャ行</button>
+        <button class="btn" data-key="cha" type="button">チャ行</button>
+        <button class="btn" data-key="nya" type="button">ニャ行</button>
+        <button class="btn" data-key="hya" type="button">ヒャ行</button>
+        <button class="btn" data-key="mya" type="button">ミャ行</button>
+        <button class="btn" data-key="rya" type="button">リャ行</button>
+        <button class="btn" data-key="gya" type="button">ギャ行</button>
+        <button class="btn" data-key="ja" type="button">ジャ行</button>
+        <button class="btn" data-key="bya" type="button">ビャ行</button>
+        <button class="btn" data-key="pya" type="button">ピャ行</button>
+
       </div>
     </div>
 
     <div class="group">
+
       <h2>出題順</h2>
+
       <div class="choices" id="orderRow">
-        <button class="btn choice sel" data-order="seq">じゅんばん</button>
-        <button class="btn choice" data-order="rand">ランダム</button>
+        <button class="btn choice sel"
+                data-order="seq"
+                type="button">
+          じゅんばん
+        </button>
+
+        <button class="btn choice"
+                data-order="rand"
+                type="button">
+          ランダム
+        </button>
       </div>
+
     </div>
 
-    <!-- 読み上げ -->
     <div class="group">
+
       <h2>よみあげ</h2>
+
       <div class="choices" id="readRow">
-        <button class="btn choice sel" data-read="off">なし</button>
-        <button class="btn choice" data-read="on">あり</button>
+
+        <button class="btn choice sel"
+                data-read="off"
+                type="button">
+          なし
+        </button>
+
+        <button class="btn choice"
+                data-read="on"
+                type="button">
+          あり
+        </button>
+
       </div>
-      <small id="readNote" style="opacity:.65">「あり」のとき：1回タップで読み上げ、2回目タップで次へ。</small>
+
+      <small style="opacity:.65">
+        「あり」のとき：1回タップで読み上げ、2回目タップで次へ。
+      </small>
+
     </div>
 
-    <button class="start" id="startBtn" disabled>スタート</button>
+    <button class="start" id="startBtn" type="button" disabled>
+      スタート
+    </button>
+
   </section>
 
   <section class="stage" id="stage" aria-live="polite">
-    <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
+
+    <button class="back-btn"
+            id="backBtn"
+            type="button"
+            aria-label="もどる">
+      ← もどる
+    </button>
+
     <div class="glyph" id="glyph"></div>
-    <div class="hint" id="hint">タップでつぎへ</div>
+
+    <div class="hint" id="hint">
+      タップでつぎへ
+    </div>
+
   </section>
 
   <footer class="panel" style="text-align:center;opacity:.6">
     <small>© 特別支援教材開発研究所</small>
   </footer>
+
 </div>
 
 <script>
 (() => {
-  const $ = (id) => document.getElementById(id);
-  const rowGrid = $('rowGrid');
-  const orderRow = $('orderRow');
-  const readRow  = $('readRow');
-  const readNote = $('readNote');
-  const startBtn = $('startBtn');
-  const selectAllBtn = $('selectAll');
-  const config = $('config');
-  const stage  = $('stage');
-  let glyph  = $('glyph'); // 再描画時に差し替える
-  let hint   = $('hint');
 
-  // ===== データ（行ごとの配列）=====  カタカナ版
+  /* =====================================================
+     要素取得
+  ===================================================== */
+
+  const $ = (id) => document.getElementById(id);
+
+  const rowGrid      = $('rowGrid');
+  const orderRow     = $('orderRow');
+  const readRow      = $('readRow');
+  const startBtn     = $('startBtn');
+  const selectAllBtn = $('selectAll');
+  const config       = $('config');
+  const stage        = $('stage');
+
+  let glyph = $('glyph');
+
+
+  /* =====================================================
+     カタカナデータ
+  ===================================================== */
+
   const ROWS = {
+
     // 基本
+
     a:  ['ア','イ','ウ','エ','オ'],
     ka: ['カ','キ','ク','ケ','コ'],
     sa: ['サ','シ','ス','セ','ソ'],
@@ -216,13 +457,15 @@
     wa: ['ワ','ヲ','ン'],
 
     // 濁音・半濁音
+
     ga: ['ガ','ギ','グ','ゲ','ゴ'],
     za: ['ザ','ジ','ズ','ゼ','ゾ'],
     da: ['ダ','ヂ','ヅ','デ','ド'],
     ba: ['バ','ビ','ブ','ベ','ボ'],
     pa: ['パ','ピ','プ','ペ','ポ'],
 
-    // 拗音（小書き：ャュョ）
+    // 拗音
+
     kya:['キャ','キュ','キョ'],
     sha:['シャ','シュ','ショ'],
     cha:['チャ','チュ','チョ'],
@@ -233,263 +476,912 @@
     gya:['ギャ','ギュ','ギョ'],
     ja: ['ジャ','ジュ','ジョ'],
     bya:['ビャ','ビュ','ビョ'],
-    pya:['ピャ','ピュ','ピョ'],
+    pya:['ピャ','ピュ','ピョ']
   };
 
-  // 単独カタカナだと読み飛ばされやすい字の読み替え（表示は変えない）
-  const READ_AS = {
-    'ヲ':'を',
-    'ン':'ん',
-    'ヘ':'へ',
-    'ハ':'は',
-  };
 
-  // ===== 状態 =====
-  let selectedSet = new Set();     // 行（複数）
-  let selectedOrder = [];          // クリック順（順番出題に使う）
-  let order = 'seq';               // 'seq' | 'rand'
-  let readMode = 'off';            // 'off' | 'on'
-  let deck = [];                   // 出題配列
-  let index = 0;                   // 現在位置
+  /* =====================================================
+     状態
+  ===================================================== */
+
+  let selectedSet   = new Set();
+  let selectedOrder = [];
+
+  let order    = 'seq';
+  let readMode = 'off';
+
+  let deck  = [];
+  let index = 0;
+
   let running = false;
-  let spokenThisCard = false;      // 読み上げ済みフラグ（readMode=onのとき使用）
 
-  // ===== 音声（Web Speech API）=====
-  const synth = window.speechSynthesis || null;
-  const ttsSupported = !!(synth && typeof window.SpeechSynthesisUtterance === 'function');
+  // 読み上げ済みか
+  let spokenThisCard = false;
+
+
+  /* =====================================================
+     Speech Synthesis
+  ===================================================== */
+
+  const speechSupported =
+    'speechSynthesis' in window &&
+    'SpeechSynthesisUtterance' in window;
+
+  const synth = speechSupported
+    ? window.speechSynthesis
+    : null;
+
   let voices = [];
-  let jaVoice = null;
-  let ttsUnlocked = false;
 
-  const loadVoices = () => {
-    if(!ttsSupported) return;
+  // 発話オブジェクトを保持する
+  // 一部ブラウザで途中消失する問題への対策
+  let currentUtterance = null;
+
+
+  /* =====================================================
+     音声一覧を取得
+  ===================================================== */
+
+  function loadVoices(){
+
+    if(!synth) return;
+
     try{
-      voices = synth.getVoices() || [];
-      jaVoice = voices.find(v => /^ja(-|_|$)/i.test(v.lang || '')) || null;
-    }catch(e){}
-  };
-  if(ttsSupported){
-    loadVoices();
-    // Chrome等は音声リストが非同期で届く
-    if(typeof synth.addEventListener === 'function'){
-      synth.addEventListener('voiceschanged', loadVoices);
-    }else{
-      synth.onvoiceschanged = loadVoices;
+      const list = synth.getVoices();
+
+      if(Array.isArray(list) && list.length > 0){
+        voices = list;
+      }
+
+    }catch(error){
+      console.warn('音声一覧を取得できませんでした。', error);
     }
   }
 
-  // 初回のユーザー操作（スタートのclick）で音声を解錠しておく
-  const unlockTTS = () => {
-    if(!ttsSupported || ttsUnlocked) return;
-    try{
-      const u = new SpeechSynthesisUtterance(' ');
-      u.lang = 'ja-JP';
-      u.volume = 0;
-      synth.speak(u);
-      ttsUnlocked = true;
-    }catch(e){}
-  };
 
-  const stopSpeak = () => {
-    if(!ttsSupported) return;
-    try{ synth.cancel(); }catch(e){}
-  };
+  // 初回取得
+  loadVoices();
 
-  const speak = (text) => {
-    if(!ttsSupported || !text) return;
-    const say = READ_AS[text] || text;
+
+  // Safari / Chrome 等では後から音声一覧が準備される場合がある
+  if(synth){
+
+    if(typeof synth.addEventListener === 'function'){
+
+      synth.addEventListener('voiceschanged', loadVoices);
+
+    }else{
+
+      synth.onvoiceschanged = loadVoices;
+
+    }
+  }
+
+
+  /* =====================================================
+     日本語音声を探す
+  ===================================================== */
+
+  function getJapaneseVoice(){
+
+    // 念のため最新状態を取得
+    loadVoices();
+
+    if(!voices.length){
+      return null;
+    }
+
+    // ja-JP を最優先
+    let voice = voices.find(v =>
+      String(v.lang).toLowerCase() === 'ja-jp'
+    );
+
+    // その他の日本語音声
+    if(!voice){
+      voice = voices.find(v =>
+        String(v.lang).toLowerCase().startsWith('ja')
+      );
+    }
+
+    return voice || null;
+  }
+
+
+  /* =====================================================
+     読み上げ停止
+  ===================================================== */
+
+  function stopSpeech(){
+
+    if(!synth) return;
+
     try{
-      // cancel() 直後に speak() すると発話が破棄される端末があるため、
-      // 発話中のときだけ止めて、少し待ってから話す
-      const utter = () => {
-        const u = new SpeechSynthesisUtterance(say);
-        u.lang = 'ja-JP';
-        u.rate = 1.0;
-        if(jaVoice) u.voice = jaVoice;
-        try{ synth.resume(); }catch(e){}   // iOSで一時停止状態のまま固まる対策
-        synth.speak(u);
-      };
+
       if(synth.speaking || synth.pending){
         synth.cancel();
-        setTimeout(utter, 80);
-      }else{
-        utter();
       }
-    }catch(e){}
-  };
 
-  // 非対応端末では「あり」を選べないようにする
-  if(!ttsSupported){
-    const onBtn = readRow.querySelector('[data-read="on"]');
-    if(onBtn) onBtn.disabled = true;
-    readNote.textContent = 'この端末（ブラウザ）は読み上げに対応していません。';
+    }catch(error){
+      console.warn('読み上げ停止エラー', error);
+    }
+
+    currentUtterance = null;
   }
 
-  // ===== ユーティリティ =====
-  const shuffle = (arr) => {
-    for (let i=arr.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [arr[i],arr[j]] = [arr[j],arr[i]];
+
+  /* =====================================================
+     ヒント表示
+  ===================================================== */
+
+  function setHint(text){
+
+    const hint = document.getElementById('hint');
+
+    if(hint){
+      hint.textContent = text;
     }
+  }
+
+
+  function updateHint(){
+
+    if(readMode === 'on'){
+
+      if(spokenThisCard){
+        setHint('もう1かいタップでつぎへ');
+      }else{
+        setHint('1かいタップでよみあげ ／ 2かいめでつぎへ');
+      }
+
+    }else{
+
+      setHint('タップでつぎへ');
+
+    }
+  }
+
+
+  /* =====================================================
+     読み上げ
+  ===================================================== */
+
+  function speak(text){
+
+    if(!text){
+      return false;
+    }
+
+    if(!speechSupported || !synth){
+
+      console.warn('このブラウザは読み上げに対応していません。');
+
+      setHint(
+        'このブラウザではよみあげできません。もう1かいタップでつぎへ'
+      );
+
+      return false;
+    }
+
+
+    try{
+
+      /*
+       * ここでは cancel() を呼ばない。
+       *
+       * Safari等で
+       * cancel() → 直後に speak()
+       * とすると読み上げが始まらない場合があるため。
+       */
+
+      if(synth.paused){
+
+        try{
+          synth.resume();
+        }catch(e){}
+
+      }
+
+
+      const utterance =
+        new SpeechSynthesisUtterance(text);
+
+
+      utterance.lang   = 'ja-JP';
+      utterance.rate   = 0.9;
+      utterance.pitch  = 1.0;
+      utterance.volume = 1.0;
+
+
+      /*
+       * 日本語音声が取得できている場合のみ指定。
+       * 取得できていない場合でも lang="ja-JP" により
+       * ブラウザ側の日本語音声を利用する。
+       */
+
+      const japaneseVoice = getJapaneseVoice();
+
+      if(japaneseVoice){
+        utterance.voice = japaneseVoice;
+      }
+
+
+      // GC対策のため参照を保持
+      currentUtterance = utterance;
+
+
+      utterance.onstart = () => {
+
+        console.log('読み上げ開始:', text);
+
+      };
+
+
+      utterance.onend = () => {
+
+        currentUtterance = null;
+
+      };
+
+
+      utterance.onerror = (event) => {
+
+        const errorName = event.error || '';
+
+        currentUtterance = null;
+
+
+        /*
+         * 次のカードへ進んだときの cancel() など、
+         * 意図的な中断はエラー表示しない。
+         */
+
+        if(
+          errorName === 'canceled' ||
+          errorName === 'interrupted'
+        ){
+          return;
+        }
+
+
+        console.warn(
+          '読み上げエラー:',
+          errorName,
+          event
+        );
+
+
+        setHint(
+          'よみあげできませんでした。もう1かいタップでつぎへ'
+        );
+
+      };
+
+
+      synth.speak(utterance);
+
+      return true;
+
+
+    }catch(error){
+
+      console.warn(
+        '読み上げに失敗しました。',
+        error
+      );
+
+      setHint(
+        'よみあげできませんでした。もう1かいタップでつぎへ'
+      );
+
+      return false;
+
+    }
+  }
+
+
+  /* =====================================================
+     シャッフル
+  ===================================================== */
+
+  const shuffle = (arr) => {
+
+    for(let i = arr.length - 1; i > 0; i--){
+
+      const j =
+        Math.floor(Math.random() * (i + 1));
+
+      [arr[i], arr[j]] =
+        [arr[j], arr[i]];
+
+    }
+
     return arr;
   };
+
+
+  /* =====================================================
+     スタートボタン状態
+  ===================================================== */
+
   const updateStartEnabled = () => {
-    startBtn.disabled = selectedSet.size === 0;
-  };
-  const hintText = () => readMode === 'on' ? 'タップでよみあげ → もういちどタップでつぎへ' : 'タップでつぎへ';
 
-  // ===== 行：複数トグル =====
-  rowGrid.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn');
+    startBtn.disabled =
+      selectedSet.size === 0;
+
+  };
+
+
+  /* =====================================================
+     行選択
+  ===================================================== */
+
+  rowGrid.addEventListener('click', (e) => {
+
+    const btn =
+      e.target.closest('button.btn');
+
     if(!btn) return;
+
+
     const key = btn.dataset.key;
-    if (selectedSet.has(key)){
+
+
+    if(selectedSet.has(key)){
+
       selectedSet.delete(key);
+
       btn.classList.remove('sel');
-      selectedOrder = selectedOrder.filter(k=>k!==key);
-    } else {
+
+      selectedOrder =
+        selectedOrder.filter(k => k !== key);
+
+
+    }else{
+
       selectedSet.add(key);
+
       btn.classList.add('sel');
+
       selectedOrder.push(key);
+
     }
+
+
     updateStartEnabled();
+
   });
 
-  // ===== ぜんぶ =====
-  selectAllBtn.addEventListener('click', ()=>{
-    selectedSet = new Set(Object.keys(ROWS));
-    selectedOrder = Object.keys(ROWS); // 表示定義順
-    rowGrid.querySelectorAll('.btn').forEach(b=>b.classList.add('sel'));
+
+  /* =====================================================
+     全部選択
+  ===================================================== */
+
+  selectAllBtn.addEventListener('click', () => {
+
+    selectedSet =
+      new Set(Object.keys(ROWS));
+
+    selectedOrder =
+      Object.keys(ROWS);
+
+
+    rowGrid
+      .querySelectorAll('.btn')
+      .forEach(button => {
+        button.classList.add('sel');
+      });
+
+
     updateStartEnabled();
+
   });
 
-  // ===== 出題順選択 =====
-  orderRow.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn'); if(!btn) return;
-    [...orderRow.querySelectorAll('.btn')].forEach(b=>b.classList.remove('sel'));
+
+  /* =====================================================
+     出題順
+  ===================================================== */
+
+  orderRow.addEventListener('click', (e) => {
+
+    const btn =
+      e.target.closest('button.btn');
+
+    if(!btn) return;
+
+
+    orderRow
+      .querySelectorAll('.btn')
+      .forEach(button => {
+        button.classList.remove('sel');
+      });
+
+
     btn.classList.add('sel');
+
     order = btn.dataset.order;
+
   });
 
-  // ===== 読み上げ選択 =====
-  readRow.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn'); if(!btn || btn.disabled) return;
-    [...readRow.querySelectorAll('.btn')].forEach(b=>b.classList.remove('sel'));
+
+  /* =====================================================
+     読み上げ設定
+  ===================================================== */
+
+  readRow.addEventListener('click', (e) => {
+
+    const btn =
+      e.target.closest('button.btn');
+
+    if(!btn) return;
+
+
+    readRow
+      .querySelectorAll('.btn')
+      .forEach(button => {
+        button.classList.remove('sel');
+      });
+
+
     btn.classList.add('sel');
-    readMode = btn.dataset.read; // 'on' or 'off'
-    if(readMode === 'on') unlockTTS();   // ここでも解錠しておく（ユーザー操作内）
+
+    readMode = btn.dataset.read;
+
+
+    /*
+     * ユーザー操作時に音声エンジンへアクセスしておく。
+     * iOS / Safari 対策。
+     */
+
+    if(
+      readMode === 'on' &&
+      speechSupported
+    ){
+
+      loadVoices();
+
+      try{
+        if(synth.paused){
+          synth.resume();
+        }
+      }catch(e){}
+
+    }
+
   });
 
-  // ===== スタート =====
-  startBtn.addEventListener('click', ()=>{
-    if(selectedSet.size===0) return;
-    if(readMode === 'on') unlockTTS();
 
-    const keys = order==='seq' ? selectedOrder.slice() : Array.from(selectedSet);
-    let pool = [];
-    keys.forEach(k => { pool = pool.concat(ROWS[k] || []); });
-    deck = order==='rand' ? shuffle(pool) : pool;
+  /* =====================================================
+     スタート
+  ===================================================== */
 
-    index = 0;
-    running = true;
-    spokenThisCard = false;
-    config.style.display = 'none';
-    stage.classList.add('play');
-    glyph.textContent = deck[index] || '';
-    hint.textContent = hintText();
-  });
+  startBtn.addEventListener('click', () => {
 
-  // ===== ステージDOMを初期形に戻す =====
-  function resetStageDOM(){
-    stage.innerHTML =
-      '<button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>' +
-      '<div class="glyph" id="glyph"></div>' +
-      '<div class="hint" id="hint">タップでつぎへ</div>';
-    glyph = document.getElementById('glyph');
-    hint  = document.getElementById('hint');
-    hint.textContent = hintText();
-  }
-
-  // ===== カード画面の「もどる」 → 設定画面に戻る =====
-  function goBackToConfig(){
-    running = false;
-    stopSpeak();
-    spokenThisCard = false;
-    index = 0;
-    stage.classList.remove('play');
-    config.style.display = '';
-    if(!document.getElementById('glyph')) resetStageDOM();
-  }
-
-  // ===== タップで次へ（読み上げありなら 1回目：読む／2回目：次へ） =====
-  const advanceOrSpeak = ()=>{
-    if(!running) return;
-    if(readMode === 'on'){
-      if(!spokenThisCard){
-        spokenThisCard = true;
-        speak(deck[index]);
-        return; // このタップでは進めない
-      }
-      spokenThisCard = false; // 次のカードに備えて初期化
-      goNext();
-    }else{
-      goNext();
-    }
-  };
-
-  const goNext = ()=>{
-    index++;
-    if(index < deck.length){
-      glyph.textContent = deck[index];
-      stopSpeak();
-      spokenThisCard = false;
-    }else{
-      finish();
-    }
-  };
-
-  // ステージのタップ処理
-  // ※ pointerdown ではなく pointerup を使う。タッチ端末では pointerdown が
-  //    ユーザー操作（user activation）として認められず、読み上げがブロックされるため。
-  stage.addEventListener('pointerup', (e)=>{
-    if(e.isPrimary === false) return;
-    if(e.target.closest('#backBtn')){
-      e.stopPropagation();
-      goBackToConfig();
+    if(selectedSet.size === 0){
       return;
     }
-    if(e.target.closest('#again') || e.target.closest('#back')) return; // 完了画面のボタンはclickで処理
-    advanceOrSpeak();
+
+
+    stopSpeech();
+
+
+    const keys =
+      order === 'seq'
+        ? selectedOrder.slice()
+        : Array.from(selectedSet);
+
+
+    let pool = [];
+
+
+    keys.forEach(key => {
+
+      pool =
+        pool.concat(ROWS[key] || []);
+
+    });
+
+
+    deck =
+      order === 'rand'
+        ? shuffle(pool)
+        : pool;
+
+
+    if(deck.length === 0){
+      return;
+    }
+
+
+    index = 0;
+
+    running = true;
+
+    spokenThisCard = false;
+
+
+    config.style.display = 'none';
+
+    stage.classList.add('play');
+
+
+    glyph.textContent =
+      deck[index] || '';
+
+
+    updateHint();
+
   });
 
-  // ===== 完了 =====
-  function finish(){
+
+  /* =====================================================
+     設定画面へ戻る
+  ===================================================== */
+
+  function goBackToConfig(){
+
     running = false;
-    stopSpeak();
-    stage.innerHTML =
-      '<div class="done">' +
-        '<div style="font-size:clamp(52px,10vw,120px)">🎉</div>' +
-        '<h3>おしまい！</h3>' +
-        '<p style="margin:.5em 0 1em">ぜんぶで <b>' + deck.length + '</b> まい のカードをれんしゅうしました。</p>' +
-        '<div class="row">' +
-          '<button class="ghost" id="again" type="button">もういっかい</button>' +
-          '<button class="primary" id="back" type="button">もどる</button>' +
-        '</div>' +
-      '</div>';
-    document.getElementById('again').onclick = ()=>{
-      resetStageDOM();
-      index = 0;
-      running = true;
-      if(order === 'rand') shuffle(deck);
-      glyph.textContent = deck[index] || '';
-      spokenThisCard = false;
-    };
-    document.getElementById('back').onclick = ()=>{ stopSpeak(); location.reload(); };
+
+    stopSpeech();
+
+    spokenThisCard = false;
+
+    index = 0;
+
+
+    stage.classList.remove('play');
+
+    config.style.display = '';
+
+
+    /*
+     * 完了画面から戻るケースに備えて
+     * ステージDOMを復元
+     */
+
+    if(!document.getElementById('glyph')){
+
+      stage.innerHTML = `
+        <button
+          class="back-btn"
+          id="backBtn"
+          type="button"
+          aria-label="もどる">
+          ← もどる
+        </button>
+
+        <div
+          class="glyph"
+          id="glyph">
+        </div>
+
+        <div
+          class="hint"
+          id="hint">
+          タップでつぎへ
+        </div>
+      `;
+
+
+      glyph =
+        document.getElementById('glyph');
+
+    }
+
   }
 
-  // 画面離脱時に発話を止める（iOSで音声が残る対策）
-  window.addEventListener('pagehide', stopSpeak);
+
+  /* =====================================================
+     タップ処理
+  ===================================================== */
+
+  function advanceOrSpeak(){
+
+    if(!running){
+      return;
+    }
+
+
+    /*
+     * 読み上げあり
+     */
+
+    if(readMode === 'on'){
+
+      /*
+       * 1回目
+       */
+
+      if(!spokenThisCard){
+
+        // 先にtrueにすることで、
+        // 読み上げ失敗時にも次のタップで進める
+        spokenThisCard = true;
+
+
+        const success =
+          speak(deck[index]);
+
+
+        if(success){
+
+          setHint(
+            'もう1かいタップでつぎへ'
+          );
+
+        }else{
+
+          setHint(
+            'よみあげできません。もう1かいタップでつぎへ'
+          );
+
+        }
+
+        return;
+      }
+
+
+      /*
+       * 2回目
+       */
+
+      spokenThisCard = false;
+
+      goNext();
+
+      return;
+    }
+
+
+    /*
+     * 読み上げなし
+     */
+
+    goNext();
+
+  }
+
+
+  /* =====================================================
+     次のカード
+  ===================================================== */
+
+  function goNext(){
+
+    /*
+     * 読み上げ中なら停止
+     */
+
+    stopSpeech();
+
+
+    index++;
+
+
+    if(index < deck.length){
+
+      glyph.textContent =
+        deck[index];
+
+      spokenThisCard = false;
+
+      updateHint();
+
+
+    }else{
+
+      finish();
+
+    }
+
+  }
+
+
+  /* =====================================================
+     カード画面クリック
+     
+     pointerdown ではなく click を使用。
+     Safari等で音声再生を
+     ユーザー操作として認識させやすくする。
+  ===================================================== */
+
+  stage.addEventListener('click', (e) => {
+
+    /*
+     * 戻るボタン
+     */
+
+    if(e.target.closest('#backBtn')){
+
+      e.preventDefault();
+
+      e.stopPropagation();
+
+      goBackToConfig();
+
+      return;
+
+    }
+
+
+    /*
+     * 完了画面のボタンは
+     * それぞれのイベントに任せる
+     */
+
+    if(
+      e.target.closest('#again') ||
+      e.target.closest('#back')
+    ){
+      return;
+    }
+
+
+    advanceOrSpeak();
+
+  });
+
+
+  /* =====================================================
+     完了
+  ===================================================== */
+
+  function finish(){
+
+    running = false;
+
+    stopSpeech();
+
+
+    stage.innerHTML = `
+
+      <div class="done">
+
+        <div
+          style="
+            font-size:clamp(52px,10vw,120px)
+          ">
+          🎉
+        </div>
+
+        <h3>
+          おしまい！
+        </h3>
+
+        <p style="margin:.5em 0 1em">
+          ぜんぶで
+          <b>${deck.length}</b>
+          まい のカードをれんしゅうしました。
+        </p>
+
+        <div class="row">
+
+          <button
+            class="ghost"
+            id="again"
+            type="button">
+            もういっかい
+          </button>
+
+          <button
+            class="primary"
+            id="back"
+            type="button">
+            もどる
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+
+    /* ===== もういっかい ===== */
+
+    document
+      .getElementById('again')
+      .addEventListener('click', (e) => {
+
+        e.stopPropagation();
+
+
+        stage.innerHTML = `
+
+          <button
+            class="back-btn"
+            id="backBtn"
+            type="button"
+            aria-label="もどる">
+            ← もどる
+          </button>
+
+          <div
+            class="glyph"
+            id="glyph">
+          </div>
+
+          <div
+            class="hint"
+            id="hint">
+            タップでつぎへ
+          </div>
+        `;
+
+
+        glyph =
+          document.getElementById('glyph');
+
+
+        index = 0;
+
+        running = true;
+
+        spokenThisCard = false;
+
+
+        if(order === 'rand'){
+          shuffle(deck);
+        }
+
+
+        glyph.textContent =
+          deck[index] || '';
+
+
+        updateHint();
+
+      });
+
+
+    /* ===== 戻る ===== */
+
+    document
+      .getElementById('back')
+      .addEventListener('click', (e) => {
+
+        e.stopPropagation();
+
+        goBackToConfig();
+
+      });
+
+  }
+
+
+  /* =====================================================
+     タブ復帰時のSafari対策
+  ===================================================== */
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+
+      if(
+        !document.hidden &&
+        synth &&
+        synth.paused
+      ){
+
+        try{
+          synth.resume();
+        }catch(e){}
+
+      }
+
+    }
+  );
+
+
+  /* =====================================================
+     ページ離脱時に読み上げ停止
+  ===================================================== */
+
+  window.addEventListener(
+    'pagehide',
+    stopSpeech
+  );
+
 })();
 </script>
+
 </body>
 </html>
