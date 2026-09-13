@@ -25,12 +25,14 @@
   html,body{ height:100% }
   body{
     margin:0; background:var(--bg); color:var(--ink);
+    overscroll-behavior:none;
+    touch-action:manipulation;              /* ダブルタップズーム防止 */
     font-family:
       "UD デジタル 教科書体 N-R","UD Digi Kyokasho N-R",
       "BIZ UDPGothic","Noto Sans JP", system-ui, -apple-system, sans-serif;
   }
 
-  .wrap{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+  .wrap{ min-height:100vh; min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
   header{ text-align:center; padding:clamp(16px,2.5vw,28px) }
   h1{ margin:0; font-size:clamp(28px,4vw,48px); color:var(--accent) }
 
@@ -41,7 +43,7 @@
   .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px }
   .ctrl-btn{
     border:2px solid var(--ring); border-radius:14px; background:#fff;
-    padding:.7em 1em; font-weight:800; font-size:clamp(15px,2.2vw,18px);
+    padding:.7em 1em; min-height:44px; font-weight:800; font-size:clamp(15px,2.2vw,18px);
     cursor:pointer; transition:.15s; text-align:center;
   }
   .ctrl-btn:hover{ background:#f8fafc; transform:translateY(-1px) }
@@ -51,11 +53,12 @@
 
   .btn{
     border:2px solid var(--ring); border-radius:14px; background:#fff;
-    padding:.8em 1em; font-weight:800; font-size:clamp(16px,2.4vw,20px);
+    padding:.8em 1em; min-height:44px; font-weight:800; font-size:clamp(16px,2.4vw,20px);
     cursor:pointer; transition:.15s; text-align:center;
   }
   .btn:hover{ background:#f8fafc; transform:translateY(-1px) }
   .btn.sel{ background:var(--accent2); color:#fff; border-color:var(--accent2); transform:scale(1.02) }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none }
 
   .choices{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px }
   .choice{ flex:1 1 130px }
@@ -66,7 +69,7 @@
   .start:disabled{ opacity:.4; cursor:not-allowed }
 
   /* === プレイ画面 === */
-  .stage{ display:none; height:100dvh; width:100%; background:var(--card);
+  .stage{ display:none; height:100vh; height:100dvh; width:100%; background:var(--card);
           place-items:center; position:relative }
   .stage.play{ display:grid }
   .glyph{
@@ -83,7 +86,7 @@
     position:absolute; top:14px; left:14px;
     background:#fff; color:var(--ink);
     border:2px solid var(--ring); border-radius:999px;
-    padding:8px 16px; font-weight:800;
+    padding:8px 16px; min-height:44px; font-weight:800;
     font-size:clamp(13px,2.2vw,15px);
     cursor:pointer; z-index:10;
     box-shadow:0 2px 8px rgba(0,0,0,.08);
@@ -99,8 +102,8 @@
   .done{ text-align:center }
   .done h3{ font-size:clamp(22px,4vw,36px); margin:.2em 0 .4em; color:var(--accent) }
   .row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-  .ghost{ background:#eef2ff; color:#232b3a; border:none; border-radius:999px; padding:12px 20px; font-weight:800 }
-  .primary{ background:var(--accent); color:#fff; border:none; border-radius:999px; padding:12px 20px; font-weight:900 }
+  .ghost{ background:#eef2ff; color:#232b3a; border:none; border-radius:999px; padding:12px 20px; min-height:44px; font-weight:800; cursor:pointer }
+  .primary{ background:var(--accent); color:#fff; border:none; border-radius:999px; padding:12px 20px; min-height:44px; font-weight:900; cursor:pointer }
 </style>
 </head>
 <body>
@@ -167,7 +170,7 @@
         <button class="btn choice sel" data-read="off">なし</button>
         <button class="btn choice" data-read="on">あり</button>
       </div>
-      <small style="opacity:.65">「あり」のとき：1回タップで読み上げ、2回目タップで次へ。</small>
+      <small id="readNote" style="opacity:.65">「あり」のとき：1回タップで読み上げ、2回目タップで次へ。</small>
     </div>
 
     <button class="start" id="startBtn" disabled>スタート</button>
@@ -176,7 +179,7 @@
   <section class="stage" id="stage" aria-live="polite">
     <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
     <div class="glyph" id="glyph"></div>
-    <div class="hint">タップでつぎへ</div>
+    <div class="hint" id="hint">タップでつぎへ</div>
   </section>
 
   <footer class="panel" style="text-align:center;opacity:.6">
@@ -190,11 +193,13 @@
   const rowGrid = $('rowGrid');
   const orderRow = $('orderRow');
   const readRow  = $('readRow');
+  const readNote = $('readNote');
   const startBtn = $('startBtn');
   const selectAllBtn = $('selectAll');
   const config = $('config');
   const stage  = $('stage');
   let glyph  = $('glyph'); // 再描画時に差し替える
+  let hint   = $('hint');
 
   // ===== データ（行ごとの配列）=====  カタカナ版
   const ROWS = {
@@ -231,6 +236,14 @@
     pya:['ピャ','ピュ','ピョ'],
   };
 
+  // 単独カタカナだと読み飛ばされやすい字の読み替え（表示は変えない）
+  const READ_AS = {
+    'ヲ':'を',
+    'ン':'ん',
+    'ヘ':'へ',
+    'ハ':'は',
+  };
+
   // ===== 状態 =====
   let selectedSet = new Set();     // 行（複数）
   let selectedOrder = [];          // クリック順（順番出題に使う）
@@ -240,6 +253,77 @@
   let index = 0;                   // 現在位置
   let running = false;
   let spokenThisCard = false;      // 読み上げ済みフラグ（readMode=onのとき使用）
+
+  // ===== 音声（Web Speech API）=====
+  const synth = window.speechSynthesis || null;
+  const ttsSupported = !!(synth && typeof window.SpeechSynthesisUtterance === 'function');
+  let voices = [];
+  let jaVoice = null;
+  let ttsUnlocked = false;
+
+  const loadVoices = () => {
+    if(!ttsSupported) return;
+    try{
+      voices = synth.getVoices() || [];
+      jaVoice = voices.find(v => /^ja(-|_|$)/i.test(v.lang || '')) || null;
+    }catch(e){}
+  };
+  if(ttsSupported){
+    loadVoices();
+    // Chrome等は音声リストが非同期で届く
+    if(typeof synth.addEventListener === 'function'){
+      synth.addEventListener('voiceschanged', loadVoices);
+    }else{
+      synth.onvoiceschanged = loadVoices;
+    }
+  }
+
+  // 初回のユーザー操作（スタートのclick）で音声を解錠しておく
+  const unlockTTS = () => {
+    if(!ttsSupported || ttsUnlocked) return;
+    try{
+      const u = new SpeechSynthesisUtterance(' ');
+      u.lang = 'ja-JP';
+      u.volume = 0;
+      synth.speak(u);
+      ttsUnlocked = true;
+    }catch(e){}
+  };
+
+  const stopSpeak = () => {
+    if(!ttsSupported) return;
+    try{ synth.cancel(); }catch(e){}
+  };
+
+  const speak = (text) => {
+    if(!ttsSupported || !text) return;
+    const say = READ_AS[text] || text;
+    try{
+      // cancel() 直後に speak() すると発話が破棄される端末があるため、
+      // 発話中のときだけ止めて、少し待ってから話す
+      const utter = () => {
+        const u = new SpeechSynthesisUtterance(say);
+        u.lang = 'ja-JP';
+        u.rate = 1.0;
+        if(jaVoice) u.voice = jaVoice;
+        try{ synth.resume(); }catch(e){}   // iOSで一時停止状態のまま固まる対策
+        synth.speak(u);
+      };
+      if(synth.speaking || synth.pending){
+        synth.cancel();
+        setTimeout(utter, 80);
+      }else{
+        utter();
+      }
+    }catch(e){}
+  };
+
+  // 非対応端末では「あり」を選べないようにする
+  if(!ttsSupported){
+    const onBtn = readRow.querySelector('[data-read="on"]');
+    if(onBtn) onBtn.disabled = true;
+    readNote.textContent = 'この端末（ブラウザ）は読み上げに対応していません。';
+  }
 
   // ===== ユーティリティ =====
   const shuffle = (arr) => {
@@ -252,16 +336,7 @@
   const updateStartEnabled = () => {
     startBtn.disabled = selectedSet.size === 0;
   };
-  const speak = (text) => {
-    try{
-      if(!text) return;
-      window.speechSynthesis.cancel(); // 連打対策
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP';
-      u.rate = 1.0;
-      speechSynthesis.speak(u);
-    }catch(e){}
-  };
+  const hintText = () => readMode === 'on' ? 'タップでよみあげ → もういちどタップでつぎへ' : 'タップでつぎへ';
 
   // ===== 行：複数トグル =====
   rowGrid.addEventListener('click', (e)=>{
@@ -298,15 +373,17 @@
 
   // ===== 読み上げ選択 =====
   readRow.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn'); if(!btn) return;
+    const btn = e.target.closest('button.btn'); if(!btn || btn.disabled) return;
     [...readRow.querySelectorAll('.btn')].forEach(b=>b.classList.remove('sel'));
     btn.classList.add('sel');
     readMode = btn.dataset.read; // 'on' or 'off'
+    if(readMode === 'on') unlockTTS();   // ここでも解錠しておく（ユーザー操作内）
   });
 
   // ===== スタート =====
   startBtn.addEventListener('click', ()=>{
     if(selectedSet.size===0) return;
+    if(readMode === 'on') unlockTTS();
 
     const keys = order==='seq' ? selectedOrder.slice() : Array.from(selectedSet);
     let pool = [];
@@ -319,24 +396,29 @@
     config.style.display = 'none';
     stage.classList.add('play');
     glyph.textContent = deck[index] || '';
+    hint.textContent = hintText();
   });
+
+  // ===== ステージDOMを初期形に戻す =====
+  function resetStageDOM(){
+    stage.innerHTML =
+      '<button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>' +
+      '<div class="glyph" id="glyph"></div>' +
+      '<div class="hint" id="hint">タップでつぎへ</div>';
+    glyph = document.getElementById('glyph');
+    hint  = document.getElementById('hint');
+    hint.textContent = hintText();
+  }
 
   // ===== カード画面の「もどる」 → 設定画面に戻る =====
   function goBackToConfig(){
     running = false;
-    try{ window.speechSynthesis.cancel(); }catch(e){}
+    stopSpeak();
     spokenThisCard = false;
     index = 0;
     stage.classList.remove('play');
     config.style.display = '';
-    // 完了画面が出ていた場合に備えて、ステージのDOMを初期形に戻す
-    if(!document.getElementById('glyph')){
-      stage.innerHTML = `
-        <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
-        <div class="glyph" id="glyph"></div>
-        <div class="hint">タップでつぎへ</div>`;
-      glyph = document.getElementById('glyph');
-    }
+    if(!document.getElementById('glyph')) resetStageDOM();
   }
 
   // ===== タップで次へ（読み上げありなら 1回目：読む／2回目：次へ） =====
@@ -348,11 +430,9 @@
         speak(deck[index]);
         return; // このタップでは進めない
       }
-      // 2回目タップで進む
       spokenThisCard = false; // 次のカードに備えて初期化
       goNext();
     }else{
-      // 読み上げなし：即次へ
       goNext();
     }
   };
@@ -361,54 +441,54 @@
     index++;
     if(index < deck.length){
       glyph.textContent = deck[index];
-      window.speechSynthesis?.cancel();
+      stopSpeak();
       spokenThisCard = false;
     }else{
       finish();
     }
   };
 
-  // ステージのタップ処理（イベント委譲で「もどる」と進行を分岐）
-  stage.addEventListener('pointerdown', (e)=>{
-    // 「もどる」ボタン上のタップは戻る処理だけ実行（次に進ませない）
+  // ステージのタップ処理
+  // ※ pointerdown ではなく pointerup を使う。タッチ端末では pointerdown が
+  //    ユーザー操作（user activation）として認められず、読み上げがブロックされるため。
+  stage.addEventListener('pointerup', (e)=>{
+    if(e.isPrimary === false) return;
     if(e.target.closest('#backBtn')){
       e.stopPropagation();
       goBackToConfig();
       return;
     }
+    if(e.target.closest('#again') || e.target.closest('#back')) return; // 完了画面のボタンはclickで処理
     advanceOrSpeak();
   });
 
   // ===== 完了 =====
   function finish(){
     running = false;
-    window.speechSynthesis?.cancel();
-    stage.innerHTML = `
-      <div class="done">
-        <div style="font-size:clamp(52px,10vw,120px)">🎉</div>
-        <h3>おしまい！</h3>
-        <p style="margin:.5em 0 1em">ぜんぶで <b>${deck.length}</b> まい のカードをれんしゅうしました。</p>
-        <div class="row">
-          <button class="ghost" id="again">もういっかい</button>
-          <button class="primary" id="back">もどる</button>
-        </div>
-      </div>`;
+    stopSpeak();
+    stage.innerHTML =
+      '<div class="done">' +
+        '<div style="font-size:clamp(52px,10vw,120px)">🎉</div>' +
+        '<h3>おしまい！</h3>' +
+        '<p style="margin:.5em 0 1em">ぜんぶで <b>' + deck.length + '</b> まい のカードをれんしゅうしました。</p>' +
+        '<div class="row">' +
+          '<button class="ghost" id="again" type="button">もういっかい</button>' +
+          '<button class="primary" id="back" type="button">もどる</button>' +
+        '</div>' +
+      '</div>';
     document.getElementById('again').onclick = ()=>{
-      // ステージDOMを元に戻して再スタート（設定は維持）
-      stage.innerHTML = `
-        <button class="back-btn" id="backBtn" type="button" aria-label="もどる">← もどる</button>
-        <div class="glyph" id="glyph"></div>
-        <div class="hint">タップでつぎへ</div>`;
-      glyph = document.getElementById('glyph');
+      resetStageDOM();
       index = 0;
       running = true;
       if(order === 'rand') shuffle(deck);
       glyph.textContent = deck[index] || '';
       spokenThisCard = false;
-      // pointerdown は stage に付いたままなのでそのまま動く
     };
-    document.getElementById('back').onclick = ()=> location.reload();
+    document.getElementById('back').onclick = ()=>{ stopSpeak(); location.reload(); };
   }
+
+  // 画面離脱時に発話を止める（iOSで音声が残る対策）
+  window.addEventListener('pagehide', stopSpeak);
 })();
 </script>
 </body>
